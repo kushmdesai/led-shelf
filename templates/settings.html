@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shelf — Settings</title>
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #1a1a1f;
+    --surface2: #242429;
+    --border: #2e2e35;
+    --text: #f0f0f2;
+    --muted: #7a7a85;
+    --accent: #ffffff;
+    --on-color: #4ade80;
+    --off-color: #7a7a85;
+    --danger: #f87171;
+    --radius: 16px;
+    --tap: 56px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 0 0 40px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 20px 16px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  nav {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px 24px;
+  }
+
+  nav a {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  nav a.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  section {
+    padding: 0 20px;
+    margin-bottom: 20px;
+  }
+
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* Status cards */
+  .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .status-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .status-card .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot.online  { background: var(--on-color); box-shadow: 0 0 6px var(--on-color); }
+  .dot.offline { background: var(--off-color); }
+
+  .status-card .detail {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  /* Settings rows */
+  .settings-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    gap: 16px;
+  }
+
+  .setting-row:last-child { border-bottom: none; }
+
+  .setting-info { flex: 1; min-width: 0; }
+  .setting-info h3 { font-size: 15px; font-weight: 500; margin-bottom: 2px; }
+  .setting-info p  { font-size: 13px; color: var(--muted); }
+
+  .setting-value {
+    font-size: 14px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .setting-row input[type="text"],
+  .setting-row input[type="number"],
+  .setting-row input[type="password"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 14px;
+    width: 140px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .setting-row input:focus { border-color: var(--muted); }
+
+  /* Toggle switch */
+  .switch {
+    position: relative;
+    width: 50px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .switch input { opacity: 0; width: 0; height: 0; }
+
+  .switch-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 100px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .switch-track::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--muted);
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .switch input:checked + .switch-track { background: var(--on-color); border-color: var(--on-color); }
+  .switch input:checked + .switch-track::after { transform: translateX(22px); background: #052e16; }
+
+  /* Buttons */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    border-radius: var(--radius);
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: opacity 0.15s;
+  }
+
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--text); color: var(--bg); }
+  .btn-danger  { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    z-index: 100;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Settings</h1>
+</header>
+
+<nav>
+  <a href="/control">Control</a>
+  <a href="/effects">Effects</a>
+  <a href="/schedule">Schedule</a>
+</nav>
+
+<!-- Device Status -->
+<section>
+  <p class="label">Device Status</p>
+  <div class="status-grid">
+    <div class="status-card">
+      <p class="card-label">LED Strip</p>
+      <div class="status-indicator">
+        <span class="dot online" id="led-dot"></span>
+        <span id="led-status">Online</span>
+      </div>
+      <p class="detail" id="led-ip">192.168.2.x</p>
+    </div>
+    <div class="status-card">
+      <p class="card-label">Switch</p>
+      <div class="status-indicator">
+        <span class="dot offline" id="switch-dot"></span>
+        <span id="switch-status">Sleeping</span>
+      </div>
+      <p class="detail" id="switch-detail">Light sleep</p>
+    </div>
+    <div class="status-card">
+      <p class="card-label">MQTT Broker</p>
+      <div class="status-indicator">
+        <span class="dot online" id="mqtt-dot"></span>
+        <span id="mqtt-status">Running</span>
+      </div>
+      <p class="detail">localhost:1883</p>
+    </div>
+    <div class="status-card">
+      <p class="card-label">Pi</p>
+      <div class="status-indicator">
+        <span class="dot online"></span>
+        <span>Online</span>
+      </div>
+      <p class="detail" id="pi-ip">192.168.2.15</p>
+    </div>
+  </div>
+</section>
+
+<!-- MQTT Settings -->
+<section>
+  <p class="label">MQTT</p>
+  <div class="settings-card">
+    <div class="setting-row">
+      <div class="setting-info">
+        <h3>Broker host</h3>
+        <p>Address of the MQTT broker</p>
+      </div>
+      <input type="text" id="mqtt-host" value="localhost">
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <h3>Port</h3>
+        <p>Default is 1883</p>
+      </div>
+      <input type="number" id="mqtt-port" value="1883">
+    </div>
+  </div>
+</section>
+
+<!-- LED Settings -->
+<section>
+  <p class="label">LED Strip</p>
+  <div class="settings-card">
+    <div class="setting-row">
+      <div class="setting-info">
+        <h3>LED count</h3>
+        <p>Total number of LEDs on the strip</p>
+      </div>
+      <input type="number" id="led-count" value="300">
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <h3>Max brightness</h3>
+        <p>Safety cap to protect the PSU</p>
+      </div>
+      <input type="number" id="max-brightness" value="80" min="0" max="100">
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <h3>Startup effect</h3>
+        <p>Play an effect when strip turns on</p>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="startup-effect" checked>
+        <span class="switch-track"></span>
+      </label>
+    </div>
+  </div>
+</section>
+
+<!-- Security -->
+<section>
+  <p class="label">Security</p>
+  <div class="settings-card">
+    <div class="setting-row">
+      <div class="setting-info">
+        <h3>Change password</h3>
+        <p>Update your login password</p>
+      </div>
+      <input type="password" id="new-password" placeholder="New password">
+    </div>
+  </div>
+</section>
+
+<!-- Save -->
+<section>
+  <button class="btn btn-primary" onclick="saveSettings()">Save changes</button>
+</section>
+
+<!-- Logout -->
+<section>
+  <button class="btn btn-danger" onclick="logout()">Log out</button>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function saveSettings() {
+    const payload = {
+      mqtt_host:       document.getElementById('mqtt-host').value,
+      mqtt_port:       parseInt(document.getElementById('mqtt-port').value),
+      led_count:       parseInt(document.getElementById('led-count').value),
+      max_brightness:  parseInt(document.getElementById('max-brightness').value),
+      startup_effect:  document.getElementById('startup-effect').checked,
+    };
+
+    const pwd = document.getElementById('new-password').value;
+    if (pwd) payload.new_password = pwd;
+
+    fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => showToast(d.message || 'Saved'))
+    .catch(() => showToast('Failed to save'));
+  }
+
+  function logout() {
+    fetch('/api/logout', { method: 'POST' })
+      .then(() => window.location.href = '/login');
+  }
+
+  // Poll device status every 10 seconds
+  function pollStatus() {
+    fetch('/api/status')
+      .then(r => r.json())
+      .then(d => {
+        setStatus('led',    d.led_online,    'led-status',    'led-dot',    'Online',  'Offline');
+        setStatus('switch', d.switch_online, 'switch-status', 'switch-dot', 'Sleeping','Offline');
+        setStatus('mqtt',   d.mqtt_online,   'mqtt-status',   'mqtt-dot',   'Running', 'Stopped');
+      })
+      .catch(() => {});
+  }
+
+  function setStatus(_, online, textId, dotId, onLabel, offLabel) {
+    document.getElementById(textId).textContent = online ? onLabel : offLabel;
+    const dot = document.getElementById(dotId);
+    dot.className = 'dot ' + (online ? 'online' : 'offline');
+  }
+
+  pollStatus();
+  setInterval(pollStatus, 10000);
+</script>
+</body>
+</html>

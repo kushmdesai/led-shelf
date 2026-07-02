@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shelf — Control</title>
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #1a1a1f;
+    --surface2: #242429;
+    --border: #2e2e35;
+    --text: #f0f0f2;
+    --muted: #7a7a85;
+    --accent: #ffffff;
+    --on-color: #4ade80;
+    --off-color: #7a7a85;
+    --radius: 16px;
+    --tap: 56px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 0 0 40px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 20px 16px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  header a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  header a:hover { color: var(--text); border-color: var(--muted); }
+
+  nav {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px 24px;
+  }
+
+  nav a {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  nav a.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  section {
+    padding: 0 20px;
+    margin-bottom: 20px;
+  }
+
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* Power toggle card */
+  .power-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .power-info h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .power-info p {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .power-info p span {
+    font-weight: 500;
+  }
+
+  .power-info p span.on  { color: var(--on-color); }
+  .power-info p span.off { color: var(--off-color); }
+
+  .toggle-btn {
+    width: 72px;
+    height: var(--tap);
+    border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .toggle-btn.is-on  { background: var(--on-color); color: #052e16; }
+  .toggle-btn.is-off { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* Brightness */
+  .slider-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .slider-row span:first-child { font-size: 15px; font-weight: 500; }
+  .slider-row span:last-child  { font-size: 15px; font-weight: 600; min-width: 40px; text-align: right; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 100px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  /* Color picker */
+  .color-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .color-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .color-row span { font-size: 15px; font-weight: 500; }
+
+  .color-row input[type="color"] {
+    -webkit-appearance: none;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+  }
+
+  .color-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  .color-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+  .presets {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+
+  .preset {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+
+  .preset:hover  { transform: scale(1.12); }
+  .preset.active { border-color: var(--text); }
+
+  /* White balance row */
+  .wb-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .wb-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .wb-pill {
+    flex: 1;
+    min-width: 70px;
+    padding: 12px 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .wb-pill:hover  { color: var(--text); border-color: var(--muted); }
+  .wb-pill.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Shelf</h1>
+  <a href="/settings">Settings</a>
+</header>
+
+<nav>
+  <a href="/control" class="active">Control</a>
+  <a href="/effects">Effects</a>
+  <a href="/schedule">Schedule</a>
+</nav>
+
+<section>
+  <p class="label">Power</p>
+  <div class="power-card">
+    <div class="power-info">
+      <h2>LED Strip</h2>
+      <p>Status: <span id="status-text" class="off">Off</span></p>
+    </div>
+    <button class="toggle-btn is-off" id="power-btn" onclick="togglePower()">Off</button>
+  </div>
+</section>
+
+<section>
+  <p class="label">Brightness</p>
+  <div class="slider-card">
+    <div class="slider-row">
+      <span>Brightness</span>
+      <span id="brightness-val">80%</span>
+    </div>
+    <input type="range" id="brightness" min="0" max="100" value="80"
+      oninput="updateBrightness(this.value)">
+  </div>
+</section>
+
+<section>
+  <p class="label">Color</p>
+  <div class="color-card">
+    <div class="color-row">
+      <span>Custom color</span>
+      <input type="color" id="color-picker" value="#ffffff" onchange="sendColor(this.value)">
+    </div>
+    <div class="presets">
+      <div class="preset active" style="background:#ffffff" onclick="pickPreset(this,'#ffffff')" title="White"></div>
+      <div class="preset" style="background:#ff4444" onclick="pickPreset(this,'#ff4444')" title="Red"></div>
+      <div class="preset" style="background:#ff8c00" onclick="pickPreset(this,'#ff8c00')" title="Warm"></div>
+      <div class="preset" style="background:#ffe066" onclick="pickPreset(this,'#ffe066')" title="Yellow"></div>
+      <div class="preset" style="background:#44ff88" onclick="pickPreset(this,'#44ff88')" title="Green"></div>
+      <div class="preset" style="background:#4488ff" onclick="pickPreset(this,'#4488ff')" title="Blue"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="label">White balance</p>
+  <div class="wb-card">
+    <div class="wb-pills">
+      <div class="wb-pill" onclick="pickWB(this,'2700')">
+        <span class="dot" style="background:#ffb347"></span>Warm
+      </div>
+      <div class="wb-pill active" onclick="pickWB(this,'4000')">
+        <span class="dot" style="background:#ffe8c0"></span>Natural
+      </div>
+      <div class="wb-pill" onclick="pickWB(this,'6500')">
+        <span class="dot" style="background:#cce8ff"></span>Cool
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  let isOn = false;
+
+  function togglePower() {
+    isOn = !isOn;
+    const btn  = document.getElementById('power-btn');
+    const stat = document.getElementById('status-text');
+    btn.textContent  = isOn ? 'On'  : 'Off';
+    btn.className    = isOn ? 'toggle-btn is-on' : 'toggle-btn is-off';
+    stat.textContent = isOn ? 'On'  : 'Off';
+    stat.className   = isOn ? 'on'  : 'off';
+    fetch('/api/power', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ state: isOn ? 'on' : 'off' })
+    });
+  }
+
+  function updateBrightness(v) {
+    document.getElementById('brightness-val').textContent = v + '%';
+    fetch('/api/brightness', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ value: parseInt(v) })
+    });
+  }
+
+  function sendColor(hex) {
+    document.querySelectorAll('.preset').forEach(p => p.classList.remove('active'));
+    fetch('/api/color', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ hex })
+    });
+  }
+
+  function pickPreset(el, hex) {
+    document.querySelectorAll('.preset').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('color-picker').value = hex;
+    fetch('/api/color', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ hex })
+    });
+  }
+
+  function pickWB(el, kelvin) {
+    document.querySelectorAll('.wb-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    fetch('/api/whitebalance', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ kelvin: parseInt(kelvin) })
+    });
+  }
+</script>
+</body>
+</html>
