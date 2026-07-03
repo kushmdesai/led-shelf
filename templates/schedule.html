@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shelf — Schedule</title>
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #1a1a1f;
+    --surface2: #242429;
+    --border: #2e2e35;
+    --text: #f0f0f2;
+    --muted: #7a7a85;
+    --on-color: #4ade80;
+    --danger: #f87171;
+    --radius: 16px;
+    --tap: 56px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 0 0 40px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 20px 16px;
+  }
+
+  header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+
+  header a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  header a:hover { color: var(--text); border-color: var(--muted); }
+
+  nav {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px 24px;
+  }
+
+  nav a {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  nav a.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  section {
+    padding: 0 20px;
+    margin-bottom: 20px;
+  }
+
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* Add schedule card */
+  .add-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .add-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .add-row label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .add-row input[type="time"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 10px 14px;
+    outline: none;
+    flex: 1;
+    text-align: right;
+    transition: border-color 0.15s;
+  }
+
+  .add-row input[type="time"]:focus { border-color: var(--muted); }
+
+  .action-pills {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .action-pill {
+    padding: 10px 20px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .action-pill.selected-on  { background: var(--on-color); color: #052e16; border-color: var(--on-color); }
+  .action-pill.selected-off { background: var(--surface2); color: var(--text); border-color: var(--text); }
+
+  .add-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .add-btn:hover { opacity: 0.85; }
+
+  /* Schedule list */
+  .schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .schedule-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .schedule-item.disabled { opacity: 0.45; }
+
+  .schedule-time {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    min-width: 80px;
+  }
+
+  .schedule-meta {
+    flex: 1;
+  }
+
+  .schedule-action {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .schedule-action.on  { color: var(--on-color); }
+  .schedule-action.off { color: var(--muted); }
+
+  .schedule-repeat {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .schedule-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Toggle switch */
+  .switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .switch input { opacity: 0; width: 0; height: 0; }
+
+  .switch-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 100px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .switch-track::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--muted);
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .switch input:checked + .switch-track { background: var(--on-color); border-color: var(--on-color); }
+  .switch input:checked + .switch-track::after { transform: translateX(20px); background: #052e16; }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+
+  .delete-btn:hover { color: var(--danger); }
+
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 40px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    z-index: 100;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Schedule</h1>
+  <a href="/settings">Settings</a>
+</header>
+
+<nav>
+  <a href="/control">Control</a>
+  <a href="/effects">Effects</a>
+  <a href="/schedule" class="active">Schedule</a>
+</nav>
+
+<!-- Add schedule -->
+<section>
+  <p class="label">New Schedule</p>
+  <div class="add-card">
+    <div class="add-row">
+      <label>Time</label>
+      <input type="time" id="new-time" value="08:00">
+    </div>
+    <div class="add-row">
+      <label>Action</label>
+      <div class="action-pills">
+        <div class="action-pill selected-on" id="pill-on" onclick="selectAction('on')">On</div>
+        <div class="action-pill" id="pill-off" onclick="selectAction('off')">Off</div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addSchedule()">Add schedule</button>
+  </div>
+</section>
+
+<!-- Schedule list -->
+<section>
+  <p class="label">Active Schedules</p>
+  <div class="schedule-list" id="schedule-list">
+    <div class="empty-state">No schedules yet</div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let selectedAction = 'on';
+
+  function selectAction(action) {
+    selectedAction = action;
+    document.getElementById('pill-on').className  = 'action-pill' + (action === 'on'  ? ' selected-on'  : '');
+    document.getElementById('pill-off').className = 'action-pill' + (action === 'off' ? ' selected-off' : '');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function addSchedule() {
+    const time = document.getElementById('new-time').value;
+    if (!time) return showToast('Please set a time');
+
+    fetch('/api/schedule', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ time, action: selectedAction, enabled: true })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'ok') {
+        showToast('Schedule added');
+        loadSchedules();
+      } else {
+        showToast(d.message || 'Error');
+      }
+    });
+  }
+
+  function toggleSchedule(id, enabled) {
+    fetch(`/api/schedule/${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ enabled })
+    }).then(() => loadSchedules());
+  }
+
+  function deleteSchedule(id) {
+    fetch(`/api/schedule/${id}`, { method: 'DELETE' })
+    .then(() => {
+      showToast('Schedule deleted');
+      loadSchedules();
+    });
+  }
+
+  function loadSchedules() {
+    fetch('/api/schedule')
+    .then(r => r.json())
+    .then(schedules => {
+      const list = document.getElementById('schedule-list');
+
+      if (schedules.length === 0) {
+        list.innerHTML = '<div class="empty-state">No schedules yet</div>';
+        return;
+      }
+
+      list.innerHTML = schedules.map(s => `
+        <div class="schedule-item ${s.enabled ? '' : 'disabled'}">
+          <div class="schedule-time">${s.time}</div>
+          <div class="schedule-meta">
+            <div class="schedule-action ${s.action}">${s.action === 'on' ? 'Turn on' : 'Turn off'}</div>
+            <div class="schedule-repeat">Every day</div>
+          </div>
+          <div class="schedule-controls">
+            <label class="switch">
+              <input type="checkbox" ${s.enabled ? 'checked' : ''}
+                onchange="toggleSchedule(${s.id}, this.checked)">
+              <span class="switch-track"></span>
+            </label>
+            <button class="delete-btn" onclick="deleteSchedule(${s.id})">×</button>
+          </div>
+        </div>
+      `).join('');
+    });
+  }
+
+  loadSchedules();
+</script>
+</body>
+</html>
