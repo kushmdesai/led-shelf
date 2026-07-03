@@ -90,16 +90,18 @@ def brightness():
 @app.route("/api/color", methods=['POST'])
 def color():
     data = request.get_json() or {}
-    hex_color = validate_hex(data.get('hex'))
+    r = validate_int(data.get('r'), 0, 255)
+    g = validate_int(data.get('g'), 0, 255)
+    b = validate_int(data.get('b'), 0, 255)
 
-    if hex_color is None:
+    if None in (r, g, b):
         return error("invalid color")
 
     with state_lock:
-        device_state["color"] = hex_color
-    send_message("color", hex_color)
+        device_state["color"] = f"{r},{g},{b}"
+    send_message("color", f"{r},{g},{b}")
 
-    return {"status": "ok", "hex": hex_color}
+    return {"status": "ok", "r": r, "g": g, "b": b}
 
 @app.route("/api/whitebalance", methods=['POST'])
 def whitebalance():
