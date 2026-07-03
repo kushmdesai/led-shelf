@@ -9,7 +9,9 @@ device_state = {
     "power": "off",
     "brightness": 80,
     "color": "#ffffff",
-    "whitebalance": 4000
+    "whitebalance": 4000,
+    "effect": None,
+    'speed': 50
 }
 
 def validate_int(value, min_v=None, max_v=None):
@@ -121,5 +123,41 @@ def whitebalance():
 def get_state():
     return jsonify(device_state)
 
+@app.route("/effects")
+def effects():
+    return render_template('effects.html')
+
+@app.route("/api/effect", methods=['POST'])
+def effect():
+    data = request.get_json() or {}
+    effect_name = data.get('effect')
+
+    valid_effects = ['rainbow', 'rainbow_wave', 'breathe', 'color_wipe', 
+                     'theater_chase', 'twinkle', 'fire', 'meteor', 
+                     'color_cycle', 'strobe', 'bouncing_ball', 'running_lights', 'none']
+
+    if effect_name not in valid_effects:
+        return error("invalid effect")
+
+    with state_lock:
+        device_state["effect"] = effect_name
+    send_message("effect", effect_name)
+
+    return {"status": "ok", "effect": effect_name}
+
+
+@app.route("/api/speed", methods=['POST'])
+def speed():
+    data = request.get_json() or {}
+    value = validate_int(data.get('value'), 1, 100)
+
+    if value is None:
+        return error("invalid speed")
+
+    with state_lock:
+        device_state["speed"] = value
+    send_message("speed", str(value))
+
+    return {"status": "ok", "value": value}
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

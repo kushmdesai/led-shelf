@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shelf — Effects</title>
+<style>
+  :root {
+    --bg: #0e0e10;
+    --surface: #1a1a1f;
+    --surface2: #242429;
+    --border: #2e2e35;
+    --text: #f0f0f2;
+    --muted: #7a7a85;
+    --on-color: #4ade80;
+    --radius: 16px;
+    --tap: 56px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 0 0 40px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 20px 16px;
+  }
+
+  header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+
+  header a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  header a:hover { color: var(--text); border-color: var(--muted); }
+
+  nav {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px 24px;
+  }
+
+  nav a {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  nav a.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  section {
+    padding: 0 20px;
+    margin-bottom: 20px;
+  }
+
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* Speed slider */
+  .slider-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .slider-row span:first-child { font-size: 15px; font-weight: 500; }
+  .slider-row span:last-child  { font-size: 15px; font-weight: 600; min-width: 40px; text-align: right; }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 100px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  /* Effect grid */
+  .effects-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .effect-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    user-select: none;
+  }
+
+  .effect-card:active { background: var(--surface2); }
+
+  .effect-card.active {
+    border-color: var(--text);
+    background: var(--surface2);
+  }
+
+  .effect-icon {
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .effect-name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .effect-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* Stop button */
+  .stop-btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .stop-btn:hover { color: var(--text); border-color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Effects</h1>
+  <a href="/settings">Settings</a>
+</header>
+
+<nav>
+  <a href="/control">Control</a>
+  <a href="/effects" class="active">Effects</a>
+  <a href="/schedule">Schedule</a>
+</nav>
+
+<!-- Speed -->
+<section>
+  <p class="label">Speed</p>
+  <div class="slider-card">
+    <div class="slider-row">
+      <span>Speed</span>
+      <span id="speed-val">50%</span>
+    </div>
+    <input type="range" id="speed" min="1" max="100" value="50"
+      oninput="updateSpeed(this.value)">
+  </div>
+</section>
+
+<!-- Effects -->
+<section>
+  <p class="label">Effects</p>
+  <div class="effects-grid">
+
+    <div class="effect-card" id="effect-rainbow" onclick="setEffect('rainbow')">
+      <div class="effect-icon">🌈</div>
+      <div class="effect-name">Rainbow</div>
+      <div class="effect-desc">Cycles through all hues evenly</div>
+    </div>
+
+    <div class="effect-card" id="effect-rainbow_wave" onclick="setEffect('rainbow_wave')">
+      <div class="effect-icon">〰️</div>
+      <div class="effect-name">Rainbow Wave</div>
+      <div class="effect-desc">Rainbow flowing along the strip</div>
+    </div>
+
+    <div class="effect-card" id="effect-breathe" onclick="setEffect('breathe')">
+      <div class="effect-icon">💫</div>
+      <div class="effect-name">Breathe</div>
+      <div class="effect-desc">Pulses in and out with your color</div>
+    </div>
+
+    <div class="effect-card" id="effect-color_wipe" onclick="setEffect('color_wipe')">
+      <div class="effect-icon">🖌️</div>
+      <div class="effect-name">Color Wipe</div>
+      <div class="effect-desc">Fills the strip one LED at a time</div>
+    </div>
+
+    <div class="effect-card" id="effect-theater_chase" onclick="setEffect('theater_chase')">
+      <div class="effect-icon">🎭</div>
+      <div class="effect-name">Theater Chase</div>
+      <div class="effect-desc">Running marquee dots</div>
+    </div>
+
+    <div class="effect-card" id="effect-twinkle" onclick="setEffect('twinkle')">
+      <div class="effect-icon">✨</div>
+      <div class="effect-name">Twinkle</div>
+      <div class="effect-desc">Random LEDs flash and fade</div>
+    </div>
+
+    <div class="effect-card" id="effect-fire" onclick="setEffect('fire')">
+      <div class="effect-icon">🔥</div>
+      <div class="effect-name">Fire</div>
+      <div class="effect-desc">Warm flickering flame</div>
+    </div>
+
+    <div class="effect-card" id="effect-meteor" onclick="setEffect('meteor')">
+      <div class="effect-icon">☄️</div>
+      <div class="effect-name">Meteor</div>
+      <div class="effect-desc">Shooting star along the strip</div>
+    </div>
+
+    <div class="effect-card" id="effect-color_cycle" onclick="setEffect('color_cycle')">
+      <div class="effect-icon">🔄</div>
+      <div class="effect-name">Color Cycle</div>
+      <div class="effect-desc">Slowly shifts through colors</div>
+    </div>
+
+    <div class="effect-card" id="effect-strobe" onclick="setEffect('strobe')">
+      <div class="effect-icon">⚡</div>
+      <div class="effect-name">Strobe</div>
+      <div class="effect-desc">Fast flash with your color</div>
+    </div>
+
+    <div class="effect-card" id="effect-bouncing_ball" onclick="setEffect('bouncing_ball')">
+      <div class="effect-icon">🏀</div>
+      <div class="effect-name">Bouncing Ball</div>
+      <div class="effect-desc">Dot bouncing back and forth</div>
+    </div>
+
+    <div class="effect-card" id="effect-running_lights" onclick="setEffect('running_lights')">
+      <div class="effect-icon">💡</div>
+      <div class="effect-name">Running Lights</div>
+      <div class="effect-desc">Smooth wave of light</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Stop -->
+<section>
+  <button class="stop-btn" onclick="stopEffect()">Stop effect</button>
+</section>
+
+<script>
+  let currentEffect = null;
+
+  function setEffect(name) {
+    document.querySelectorAll('.effect-card').forEach(c => c.classList.remove('active'));
+    const card = document.getElementById('effect-' + name);
+    if (card) card.classList.add('active');
+    currentEffect = name;
+    fetch('/api/effect', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ effect: name })
+    });
+  }
+
+  function stopEffect() {
+    document.querySelectorAll('.effect-card').forEach(c => c.classList.remove('active'));
+    currentEffect = null;
+    fetch('/api/effect', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ effect: 'none' })
+    });
+  }
+
+  function updateSpeed(v) {
+    document.getElementById('speed-val').textContent = v + '%';
+    fetch('/api/speed', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ value: parseInt(v) })
+    });
+  }
+</script>
+</body>
+</html>
