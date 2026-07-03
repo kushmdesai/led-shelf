@@ -61,6 +61,10 @@ def control():
 def settings():
     return render_template('settings.html')
 
+@app.route("/schedule")
+def schedule():
+    return render_template('schedule.html')
+
 @app.route("/api/power", methods=['POST'])
 def power():
     data = request.get_json() or {}
