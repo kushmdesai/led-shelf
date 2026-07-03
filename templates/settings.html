@@ -161,6 +161,11 @@
     flex-shrink: 0;
   }
 
+  .setting-value.readonly {
+    color: var(--text);
+    font-weight: 500;
+  }
+
   .setting-row input[type="text"],
   .setting-row input[type="number"],
   .setting-row input[type="password"] {
@@ -270,10 +275,10 @@
     <div class="status-card">
       <p class="card-label">LED Strip</p>
       <div class="status-indicator">
-        <span class="dot online" id="led-dot"></span>
-        <span id="led-status">Online</span>
+        <span class="dot offline" id="led-dot"></span>
+        <span id="led-status">Checking</span>
       </div>
-      <p class="detail" id="led-ip">192.168.2.x</p>
+      <p class="detail" id="led-detail">Power unknown</p>
     </div>
     <div class="status-card">
       <p class="card-label">Switch</p>
@@ -286,10 +291,10 @@
     <div class="status-card">
       <p class="card-label">MQTT Broker</p>
       <div class="status-indicator">
-        <span class="dot online" id="mqtt-dot"></span>
-        <span id="mqtt-status">Running</span>
+        <span class="dot offline" id="mqtt-dot"></span>
+        <span id="mqtt-status">Checking</span>
       </div>
-      <p class="detail">localhost:1883</p>
+      <p class="detail" id="mqtt-detail">localhost:1883</p>
     </div>
     <div class="status-card">
       <p class="card-label">Pi</p>
@@ -297,7 +302,7 @@
         <span class="dot online"></span>
         <span>Online</span>
       </div>
-      <p class="detail" id="pi-ip">192.168.2.15</p>
+      <p class="detail" id="pi-ip">This server</p>
     </div>
   </div>
 </section>
@@ -311,14 +316,14 @@
         <h3>Broker host</h3>
         <p>Address of the MQTT broker</p>
       </div>
-      <input type="text" id="mqtt-host" value="localhost">
+      <span class="setting-value readonly" id="mqtt-host">localhost</span>
     </div>
     <div class="setting-row">
       <div class="setting-info">
         <h3>Port</h3>
         <p>Default is 1883</p>
       </div>
-      <input type="number" id="mqtt-port" value="1883">
+      <span class="setting-value readonly" id="mqtt-port">1883</span>
     </div>
   </div>
 </section>
@@ -332,14 +337,14 @@
         <h3>LED count</h3>
         <p>Total number of LEDs on the strip</p>
       </div>
-      <input type="number" id="led-count" value="300">
+      <input type="number" id="led-count" value="300" min="1" max="5000">
     </div>
     <div class="setting-row">
       <div class="setting-info">
         <h3>Max brightness</h3>
         <p>Safety cap to protect the PSU</p>
       </div>
-      <input type="number" id="max-brightness" value="80" min="0" max="100">
+      <input type="number" id="max-brightness" value="80" min="1" max="100">
     </div>
     <div class="setting-row">
       <div class="setting-info">
@@ -354,28 +359,9 @@
   </div>
 </section>
 
-<!-- Security -->
-<section>
-  <p class="label">Security</p>
-  <div class="settings-card">
-    <div class="setting-row">
-      <div class="setting-info">
-        <h3>Change password</h3>
-        <p>Update your login password</p>
-      </div>
-      <input type="password" id="new-password" placeholder="New password">
-    </div>
-  </div>
-</section>
-
 <!-- Save -->
 <section>
   <button class="btn btn-primary" onclick="saveSettings()">Save changes</button>
-</section>
-
-<!-- Logout -->
-<section>
-  <button class="btn btn-danger" onclick="logout()">Log out</button>
 </section>
 
 <div class="toast" id="toast"></div>
@@ -390,15 +376,10 @@
 
   function saveSettings() {
     const payload = {
-      mqtt_host:       document.getElementById('mqtt-host').value,
-      mqtt_port:       parseInt(document.getElementById('mqtt-port').value),
       led_count:       parseInt(document.getElementById('led-count').value),
       max_brightness:  parseInt(document.getElementById('max-brightness').value),
       startup_effect:  document.getElementById('startup-effect').checked,
     };
-
-    const pwd = document.getElementById('new-password').value;
-    if (pwd) payload.new_password = pwd;
 
     fetch('/api/settings', {
       method: 'POST',
@@ -406,13 +387,31 @@
       body: JSON.stringify(payload)
     })
     .then(r => r.json())
-    .then(d => showToast(d.message || 'Saved'))
+    .then(d => {
+      if (d.status === 'ok') {
+        applySettings(d.settings);
+        showToast(d.message || 'Saved');
+      } else {
+        showToast(d.message || 'Failed to save');
+      }
+    })
     .catch(() => showToast('Failed to save'));
   }
 
-  function logout() {
-    fetch('/api/logout', { method: 'POST' })
-      .then(() => window.location.href = '/login');
+  function loadSettings() {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(applySettings)
+      .catch(() => showToast('Failed to load settings'));
+  }
+
+  function applySettings(settings) {
+    document.getElementById('mqtt-host').textContent = settings.mqtt_host;
+    document.getElementById('mqtt-port').textContent = settings.mqtt_port;
+    document.getElementById('mqtt-detail').textContent = `${settings.mqtt_host}:${settings.mqtt_port}`;
+    document.getElementById('led-count').value = settings.led_count;
+    document.getElementById('max-brightness').value = settings.max_brightness;
+    document.getElementById('startup-effect').checked = settings.startup_effect;
   }
 
   // Poll device status every 10 seconds
@@ -423,6 +422,9 @@
         setStatus('led',    d.led_online,    'led-status',    'led-dot',    'Online',  'Offline');
         setStatus('switch', d.switch_online, 'switch-status', 'switch-dot', 'Sleeping','Offline');
         setStatus('mqtt',   d.mqtt_online,   'mqtt-status',   'mqtt-dot',   'Running', 'Stopped');
+        document.getElementById('led-detail').textContent = `Power ${d.led_power || 'unknown'}`;
+        document.getElementById('mqtt-detail').textContent = `${d.mqtt_host}:${d.mqtt_port}`;
+        document.getElementById('pi-ip').textContent = window.location.hostname || 'This server';
       })
       .catch(() => {});
   }
@@ -433,6 +435,7 @@
     dot.className = 'dot ' + (online ? 'online' : 'offline');
   }
 
+  loadSettings();
   pollStatus();
   setInterval(pollStatus, 10000);
 </script>

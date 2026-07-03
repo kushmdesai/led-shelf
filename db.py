@@ -14,6 +14,14 @@ DEFAULT_DEVICE_STATE = {
     "speed": "50",
 }
 
+DEFAULT_SETTINGS = {
+    "mqtt_host": "localhost",
+    "mqtt_port": "1883",
+    "led_count": "300",
+    "max_brightness": "80",
+    "startup_effect": "true",
+}
+
 
 def get_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -45,11 +53,28 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+            """
+        )
 
         for key, value in DEFAULT_DEVICE_STATE.items():
             conn.execute(
                 """
                 INSERT OR IGNORE INTO device_state (key, value)
+                VALUES (?, ?)
+                """,
+                (key, value),
+            )
+
+        for key, value in DEFAULT_SETTINGS.items():
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO settings (key, value)
                 VALUES (?, ?)
                 """,
                 (key, value),
@@ -186,3 +211,26 @@ def set_device_state_many(values):
             """,
             [(key, str(value)) for key, value in values.items()],
         )
+
+
+def get_settings():
+    with get_connection() as conn:
+        rows = conn.execute("SELECT key, value FROM settings").fetchall()
+
+    settings = dict(DEFAULT_SETTINGS)
+    settings.update({row["key"]: row["value"] for row in rows})
+    return settings
+
+
+def set_settings(values):
+    with get_connection() as conn:
+        conn.executemany(
+            """
+            INSERT INTO settings (key, value)
+            VALUES (?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            """,
+            [(key, str(value)) for key, value in values.items()],
+        )
+
+    return get_settings()
