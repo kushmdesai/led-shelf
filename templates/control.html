@@ -388,10 +388,11 @@
     document.querySelectorAll('.preset').forEach(p => p.classList.remove('active'));
     el.classList.add('active');
     document.getElementById('color-picker').value = hex;
+    const { r, g, b } = hexToRGB(hex);
     fetch('/api/color', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ hex })
+      body: JSON.stringify({ r, g, b })
     });
   }
 
