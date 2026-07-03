@@ -2,11 +2,13 @@ from flask import Flask, render_template, redirect, url_for, request, jsonify
 from mqtt import send_message
 from threading import Lock
 import db
+from schedule import start_scheduler
 
 
 state_lock = Lock()
 app = Flask(__name__)
 db.init_db()
+start_scheduler(state_lock=state_lock)
 
 INT_STATE_KEYS = {"brightness", "whitebalance", "speed"}
 
