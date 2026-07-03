@@ -1,14 +1,21 @@
-from flask import Flask, render_template, redirect, url_for, request, jsonify
+import os
+from functools import wraps
+
+from flask import Flask, render_template, redirect, url_for, request, jsonify, session
 from mqtt import MQTT_HOST, MQTT_PORT, client as mqtt_client, send_message
 from threading import Lock
+from werkzeug.security import check_password_hash
 import db
 from schedule import start_scheduler
 
 
 state_lock = Lock()
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(32)
 db.init_db()
 start_scheduler(state_lock=state_lock)
+
+PASSWORD_HASH_ENV = "LED_SHELF_PASSWORD_HASH"
 
 INT_STATE_KEYS = {"brightness", "whitebalance", "speed"}
 INT_SETTING_KEYS = {"mqtt_port", "led_count", "max_brightness"}
@@ -54,6 +61,36 @@ def validate_hex(color):
 def error(msg):
     return {"status": "error", "message": msg}, 400
 
+def is_logged_in():
+    return session.get("logged_in") is True
+
+def require_auth(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if is_logged_in():
+            return view(*args, **kwargs)
+
+        if request.path.startswith("/api/"):
+            return {"status": "error", "message": "authentication required"}, 401
+
+        return redirect(url_for("login", next=request.path))
+
+    return wrapped
+
+def password_is_valid(password):
+    password_hash = os.environ.get(PASSWORD_HASH_ENV)
+
+    if not password_hash:
+        return False
+
+    return check_password_hash(password_hash, password)
+
+def safe_next_url(next_url):
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        return next_url
+
+    return url_for("control")
+
 def normalize_device_state(raw_state):
     state = dict(raw_state)
 
@@ -96,22 +133,48 @@ def validate_schedule_time(time):
     return hour is not None and minute is not None
 
 @app.route("/")
+@require_auth
 def auth():
     return redirect(url_for('control'))
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "GET":
+        if is_logged_in():
+            return redirect(url_for("control"))
+        return render_template("login.html")
+
+    password = request.form.get("password", "")
+
+    if password_is_valid(password):
+        session.clear()
+        session["logged_in"] = True
+        return redirect(safe_next_url(request.form.get("next")))
+
+    return render_template("login.html", error="Invalid password"), 401
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
 @app.route("/control")
+@require_auth
 def control():
     return render_template('control.html')
 
 @app.route("/settings")
+@require_auth
 def settings():
     return render_template('settings.html')
 
 @app.route("/schedule")
+@require_auth
 def schedule():
     return render_template('schedule.html')
 
 @app.route("/api/power", methods=['POST'])
+@require_auth
 def power():
     data = request.get_json() or {}
     state = data.get('state')
@@ -133,6 +196,7 @@ def power():
     return {"status": "ok", "state": state}
 
 @app.route("/api/brightness", methods=['POST'])
+@require_auth
 def brightness():
     data = request.get_json() or {}
     value = validate_int(data.get('value'), 0, get_max_brightness())
@@ -147,6 +211,7 @@ def brightness():
     return {"status": "ok", "value": value}
 
 @app.route("/api/color", methods=['POST'])
+@require_auth
 def color():
     data = request.get_json() or {}
     r = validate_int(data.get('r'), 0, 255)
@@ -165,6 +230,7 @@ def color():
     return {"status": "ok", "r": r, "g": g, "b": b}
 
 @app.route("/api/whitebalance", methods=['POST'])
+@require_auth
 def whitebalance():
     data = request.get_json() or {}
     kelvin = validate_int(data.get('kelvin'), 1000, 10000)
@@ -179,15 +245,18 @@ def whitebalance():
     return {"status": "ok", "kelvin": kelvin}
 
 @app.route("/api/state", methods=['GET'])
+@require_auth
 def get_state():
     with state_lock:
         return jsonify(normalize_device_state(db.get_device_state()))
 
 @app.route("/effects")
+@require_auth
 def effects():
     return render_template('effects.html')
 
 @app.route("/api/effect", methods=['POST'])
+@require_auth
 def effect():
     data = request.get_json() or {}
     effect_name = data.get('effect')
@@ -203,6 +272,7 @@ def effect():
 
 
 @app.route("/api/speed", methods=['POST'])
+@require_auth
 def speed():
     data = request.get_json() or {}
     value = validate_int(data.get('value'), 1, 100)
@@ -217,12 +287,14 @@ def speed():
     return {"status": "ok", "value": value}
 
 @app.route("/api/settings", methods=["GET"])
+@require_auth
 def get_settings():
     with state_lock:
         return jsonify(normalize_settings(db.get_settings()))
 
 
 @app.route("/api/settings", methods=["POST"])
+@require_auth
 def update_settings():
     data = request.get_json() or {}
     changes = {}
@@ -247,10 +319,14 @@ def update_settings():
     with state_lock:
         settings = normalize_settings(db.set_settings(changes)) if changes else normalize_settings(db.get_settings())
 
+    if "led_count" in changes:
+        send_message("led_count", str(settings["led_count"]))
+
     return {"status": "ok", "message": "Settings saved", "settings": settings}
 
 
 @app.route("/api/status", methods=["GET"])
+@require_auth
 def get_status():
     with state_lock:
         settings = normalize_settings(db.get_settings())
@@ -270,12 +346,14 @@ def get_status():
     })
 
 @app.route("/api/schedule", methods=["GET"])
+@require_auth
 def get_schedules():
     with state_lock:
         return jsonify(db.get_schedules())
 
 
 @app.route("/api/schedule", methods=["POST"])
+@require_auth
 def add_schedule():
     data = request.get_json() or {}
 
@@ -303,6 +381,7 @@ def add_schedule():
 
 
 @app.route("/api/schedule/<int:schedule_id>", methods=["PATCH"])
+@require_auth
 def update_schedule(schedule_id):
     data = request.get_json() or {}
     changes = {}
@@ -337,6 +416,7 @@ def update_schedule(schedule_id):
 
 
 @app.route("/api/schedule/<int:schedule_id>", methods=["DELETE"])
+@require_auth
 def delete_schedule(schedule_id):
     with state_lock:
         deleted = db.delete_schedule(schedule_id)

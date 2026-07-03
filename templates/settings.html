@@ -328,37 +328,6 @@
   </div>
 </section>
 
-<!-- LED Settings -->
-<section>
-  <p class="label">LED Strip</p>
-  <div class="settings-card">
-    <div class="setting-row">
-      <div class="setting-info">
-        <h3>LED count</h3>
-        <p>Total number of LEDs on the strip</p>
-      </div>
-      <input type="number" id="led-count" value="300" min="1" max="5000">
-    </div>
-    <div class="setting-row">
-      <div class="setting-info">
-        <h3>Max brightness</h3>
-        <p>Safety cap to protect the PSU</p>
-      </div>
-      <input type="number" id="max-brightness" value="80" min="1" max="100">
-    </div>
-    <div class="setting-row">
-      <div class="setting-info">
-        <h3>Startup effect</h3>
-        <p>Play an effect when strip turns on</p>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="startup-effect" checked>
-        <span class="switch-track"></span>
-      </label>
-    </div>
-  </div>
-</section>
-
 <!-- Save -->
 <section>
   <button class="btn btn-primary" onclick="saveSettings()">Save changes</button>
@@ -375,11 +344,7 @@
   }
 
   function saveSettings() {
-    const payload = {
-      led_count:       parseInt(document.getElementById('led-count').value),
-      max_brightness:  parseInt(document.getElementById('max-brightness').value),
-      startup_effect:  document.getElementById('startup-effect').checked,
-    };
+    const payload = {};
 
     fetch('/api/settings', {
       method: 'POST',
@@ -409,9 +374,6 @@
     document.getElementById('mqtt-host').textContent = settings.mqtt_host;
     document.getElementById('mqtt-port').textContent = settings.mqtt_port;
     document.getElementById('mqtt-detail').textContent = `${settings.mqtt_host}:${settings.mqtt_port}`;
-    document.getElementById('led-count').value = settings.led_count;
-    document.getElementById('max-brightness').value = settings.max_brightness;
-    document.getElementById('startup-effect').checked = settings.startup_effect;
   }
 
   // Poll device status every 10 seconds
